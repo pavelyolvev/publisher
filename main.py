@@ -64,7 +64,7 @@ def create_frame(notebook):
         print(f"Selected date: {selected_date}")
 
     frame_main = ttk.Frame(notebook)
-    frame_code = ttk.Frame(frame_main, borderwidth=1, relief=SOLID, padding=[8, 10])
+    frame_left = ttk.Frame(frame_main, borderwidth=1, relief=SOLID, padding=[8, 10])
     frame_text = ttk.Frame(frame_main, borderwidth=1, relief=SOLID, padding=[8, 10])
     frame_tools = ttk.Frame(frame_main, borderwidth=1, relief=SOLID, padding=[8, 10])
     frame = ttk.Frame(frame_main, borderwidth=1, relief=SOLID, padding=[8, 10])
@@ -86,14 +86,18 @@ def create_frame(notebook):
     button = ttk.Button(frame, text="Get Selected Date", command=get_selected_date)
     button.pack(pady=10)
 
-    frame_tools.pack(anchor=NW, side=TOP, fill=BOTH, expand=True)
-    frame_code.pack(anchor=NW, side=LEFT, fill=BOTH, expand=True)
-    frame_text.pack(anchor=NW, side=LEFT, fill=X, expand=True)
+    text_area = scrolledtext.ScrolledText(frame_left, wrap=WORD, font=("Times New Roman", 15))
+    code_area = scrolledtext.ScrolledText(frame_left, wrap=WORD, font=("Courier New", 15))
 
-    tab_cls_btn = ttk.Button(frame_tools, text="Закрыть вкладку", command=close_current_tab)
-    tab_cls_btn.pack(pady=10)
+    text_area.grid(column=0, row=0)
+    code_area.grid(column=1, row=0)
 
-    frame.pack(anchor=E, fill=Y, expand=True)
+    tab_cls_btn = ttk.Button(frame_main, text="Закрыть вкладку", command=close_current_tab)
+    tab_cls_btn.pack(anchor=NW, side=TOP)
+
+
+    frame.pack(side=RIGHT, fill=Y, expand=True)
+    frame_left.pack(anchor=W, fill=Y, expand=True)
 
     frame_main.pack(fill=BOTH, expand=True)
     return frame_main
