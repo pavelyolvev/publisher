@@ -14,6 +14,7 @@ template_p5 = '<p style="text-align: center;">{}   <strong>{}</strong></p>\n<p s
 def parse_document(filepath):
     num_lvl_counter = [0] * 9
     doc_date = ""
+    doc_num = 0
     html = []
     text_before_postanovlenie = []
     text_after_postanovlenie = []
@@ -39,8 +40,11 @@ def parse_document(filepath):
                     data_tables[i][j].append(cell.text)
                     data_pattern = r'\d{2}\.\d{2}\.\d{4}\s*№\s*\d+'
                     match = re.search(data_pattern, cell.text)
+
                     if match:
                         print(match.group())
+                        doc_num = int(match.group().split('№')[1])
+                        print(doc_num)
                         if doc_date == "":
                             doc_date = match.group()
                         break
@@ -126,7 +130,8 @@ def parse_document(filepath):
             template_p5.format(' '.join(author[0].split()), author[1], today.strftime('%Y'), today.strftime('%m'),
                                os.path.basename(filepath)))
         print(' '.join(content))
-        return ' '.join(content)
+        f.close()
+        return ' '.join(content), doc_date, doc_num
 
 
 

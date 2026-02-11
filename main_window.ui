@@ -23,11 +23,14 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="acceptDrops">
+       <bool>true</bool>
+      </property>
       <property name="tabShape">
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>-1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -69,7 +72,7 @@
      <string>Вид</string>
     </property>
     <addaction name="action_HTML"/>
-    <addaction name="action_6"/>
+    <addaction name="action_text"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -118,11 +121,23 @@
    </property>
   </action>
   <action name="action_HTML">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Отображать HTML-код</string>
    </property>
   </action>
-  <action name="action_6">
+  <action name="action_text">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Отображать текст</string>
    </property>

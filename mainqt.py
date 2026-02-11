@@ -1,9 +1,13 @@
 import os
-from PyQt6 import uic
+import re
+import time
+from datetime import datetime
+
+from PyQt6 import uic, QtCore
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QAction
 from html_text_gen import parse_document
-from PyQt5.QtCore import QDateTime, Qt
+from PyQt5.QtCore import QDateTime, Qt, QTime
 
 
 # эта функция срабатывает при нажатии кнопки
@@ -117,6 +121,8 @@ def extract_html_from_qt_html(qt_html):
         '')
 
     return clean_html.strip()
+
+
 def set_observalbe_text(code_area, text_area):
     def update_text(new_text):
         buffer_text = new_text
@@ -128,7 +134,9 @@ def set_observalbe_text(code_area, text_area):
 
 
 def add_new_tab(filepath):
-    html = parse_document(filepath)
+    html, doc_date, doc_num = parse_document(filepath)
+    document_date = re.findall(r'\d{2}\.\d{2}\.\d{4}', doc_date)[0]
+    print(document_date)
     # print(html)
     """Добавляет новую вкладку в tabWidget"""
     # Создаем содержимое для новой вкладки
@@ -147,12 +155,14 @@ def add_new_tab(filepath):
 
     text_area = QTextEdit()
     text_area.setPlaceholderText("Введите текст здесь...")
-    text_area.setText(html)
+    text_area.setHtml(html)
+    #text_area.setAcceptRichText(True)
+    text_area.setPlainText(text_area.toPlainText())
 
-    #print(text_area.toHtml())
-    #print(code_area.toPlainText())
-    link_html_editors(code_area, text_area)
-    #set_observalbe_text(code_area, text_area)
+    # print(text_area.toHtml())
+    # print(code_area.toPlainText())
+    #link_html_editors(code_area, text_area)
+    # set_observalbe_text(code_area, text_area)
     # left_layout.addWidget(QLabel("Код:"))
     left_layout.addWidget(code_area)
     # left_layout.addWidget(QLabel("Текст:"))
@@ -166,10 +176,20 @@ def add_new_tab(filepath):
     datetime_lbl = QLabel("Дата и время:")
     datetime_edit = QDateTimeEdit()
     datetime_edit.setCalendarPopup(True)
+    # datetime_edit.setDate(QtCore.QDate.fromString(document_date, "dd.MM.yyyy"))
+    final_date = QtCore.QDate.fromString(document_date, "dd.MM.yyyy")
+    time_h, time_m = time_limiter(doc_num)
+    datetime_ = QtCore.QDateTime(final_date.year(), final_date.month(), final_date.day(), time_h, time_m)
+    datetime_edit.setDateTime(datetime_)
+    # time_now = QTime(time.localtime().tm_hour, time.localtime().tm_min)
+    # print(time_now)
+    # datetime_edit.setTime(time_now)
 
     header_lbl = QLabel("Заголовок:")
     header_edit = QLineEdit()
     header_edit.setPlaceholderText("Введите заголовок...")
+    date_num = doc_date.split(' ', 1)
+    header_edit.setText(f"{date_num[0]} Постановление {date_num[1]}")
 
     public_btn = QPushButton("Опубликовать")
 
@@ -185,11 +205,6 @@ def add_new_tab(filepath):
     right_layout.addWidget(public_btn)
     right_layout.addStretch()  # растягивающийся спейсер
 
-    # Добавляем кнопку удаления вкладки внизу правой панели
-    delete_btn = QPushButton("Удалить эту вкладку")
-    # delete_btn.clicked.connect(lambda: remove_tab(form.tabWidget.currentIndex))
-    right_layout.addWidget(delete_btn)
-
     # Добавляем левую и правую части в основной layout
     main_layout.addWidget(left_widget, 3)  # коэффициент растяжения 3
     main_layout.addWidget(right_widget, 1)  # коэффициент растяжения 1
@@ -200,6 +215,11 @@ def add_new_tab(filepath):
     # Переключаемся на новую вкладку
     form.tabWidget.setCurrentIndex(tab_index)
 
+    action_text = window.findChild(QAction, "action_text")
+    action_html = window.findChild(QAction, "action_HTML")
+
+    action_text.toggled.connect(lambda: hide_show_widget(text_area, action_text.isChecked()))
+    action_html.toggled.connect(lambda: hide_show_widget(code_area, action_html.isChecked()))
     # Сохраняем ссылки на виджеты, если нужно
     new_widget.code_area = code_area
     new_widget.text_area = text_area
@@ -214,6 +234,26 @@ def remove_tab(index):
         form.tabWidget.removeTab(index)
 
 
+def time_limiter(num):
+    res_h = 0
+    res_m = 0
+    if num >= 1440:
+        num = num % 1440
+    res_h = num // 60
+    res_m = num % 60
+    print(res_h, res_m)
+    return res_h, res_m
+
+
+def hide_show_widget(widget, is_shown):
+    widget.setHidden(not is_shown)
+
+
+def test():
+    # time_limiter(1439)
+    return
+
+
 # подключаем файл, полученный в QtDesigner
 Form, Window = uic.loadUiType("main_window.ui")
 app = QApplication([])
@@ -223,9 +263,10 @@ window.show()
 
 action_new_tab = window.findChild(QAction, "actionnewTab")
 action_open = window.findChild(QAction, "action_open")
+
 action_open.triggered.connect(lambda: open_file(window))
 if action_new_tab:
-    action_new_tab.triggered.connect(add_new_tab)
+    action_new_tab.triggered.connect(test)
 else:
     print("Действие actionnewTab не найдено")
 
@@ -239,7 +280,6 @@ def close_tab_handler(index):
         # Можно добавить проверку на несохраненные изменения
         widget = form.tabWidget.widget(index)
         tab_name = form.tabWidget.tabText(index)
-
         print(f"Закрываю вкладку: '{tab_name}'")
         form.tabWidget.removeTab(index)
     else:
