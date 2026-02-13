@@ -22,15 +22,24 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="QTabWidget" name="tabWidget_main">
       <property name="acceptDrops">
        <bool>true</bool>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="tabPosition">
+       <enum>QTabWidget::West</enum>
       </property>
       <property name="tabShape">
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>-1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -44,6 +53,16 @@
       <property name="movable">
        <bool>true</bool>
       </property>
+      <widget class="QWidget" name="tab_html_gen">
+       <attribute name="title">
+        <string>Генератор HTML</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Tab 2</string>
+       </attribute>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -71,8 +90,14 @@
     <property name="title">
      <string>Вид</string>
     </property>
-    <addaction name="action_HTML"/>
-    <addaction name="action_text"/>
+    <widget class="QMenu" name="menu_HTML">
+     <property name="title">
+      <string>Генератор HTML</string>
+     </property>
+     <addaction name="action_HTML"/>
+     <addaction name="action_text"/>
+    </widget>
+    <addaction name="menu_HTML"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -84,7 +109,7 @@
      </property>
      <addaction name="action_7"/>
      <addaction name="separator"/>
-     <addaction name="action_9"/>
+     <addaction name="action_open_wp_dialog"/>
     </widget>
     <addaction name="menuWordPress"/>
    </widget>
@@ -147,7 +172,7 @@
     <string>Статус:</string>
    </property>
   </action>
-  <action name="action_9">
+  <action name="action_open_wp_dialog">
    <property name="text">
     <string>Настроить</string>
    </property>
@@ -155,6 +180,28 @@
   <action name="actionnewTab">
    <property name="text">
     <string>newTab</string>
+   </property>
+  </action>
+  <action name="action_HTML_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Отображать HTML-код</string>
+   </property>
+  </action>
+  <action name="action_text_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Отображать текст</string>
    </property>
   </action>
  </widget>

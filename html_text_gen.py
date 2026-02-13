@@ -11,6 +11,17 @@ template_p4 = '<p style="text-align: justify;">{}</p>\n'
 template_p5 = '<p style="text-align: center;">{}   <strong>{}</strong></p>\n<p style="text-align: right;"><strong><a href="http://pohr.ru/wps/wp-content/uploads/{}/{}/{}">Приложение</a></strong></p>\n'
 
 
+def time_limiter(num):
+    res_h = 0
+    res_m = 0
+    if num >= 1440:
+        num = num % 1440
+    res_h = num // 60
+    res_m = num % 60
+    print(res_h, res_m)
+    return res_h, res_m
+
+
 def parse_document(filepath):
     num_lvl_counter = [0] * 9
     doc_date = ""
@@ -132,7 +143,6 @@ def parse_document(filepath):
         print(' '.join(content))
         f.close()
         return ' '.join(content), doc_date, doc_num
-
 
 
 """

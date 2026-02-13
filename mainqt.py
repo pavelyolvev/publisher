@@ -7,6 +7,9 @@ from PyQt6 import uic, QtCore
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QAction
 from html_text_gen import parse_document
+from wordpress_module import *
+from html_converter import convert
+from docx_tab_widget import DocxTabWidget
 from PyQt5.QtCore import QDateTime, Qt, QTime
 
 
@@ -20,6 +23,7 @@ def open_file(parent_window):
     dialog.setNameFilter("Documents (*.doc *.docx)")
     files, ok = dialog.getOpenFileNames()
     for file in files:
+        #form.tabWidget.add_new_tab(file)
         add_new_tab(file)
 
 
@@ -54,7 +58,7 @@ def link_html_editors(code_area, text_area):
             # Получаем HTML из text_area
             html_code = text_area.toHtml()  # Это строка, а не QTextEdit!
             # Преобразуем в чистый HTML
-            clean_html = extract_html_from_qt_html(html_code)  # Изменили имя функции
+            clean_html = convert(html_code)  # Изменили имя функции
             code_area.setPlainText(clean_html)
         except Exception as e:
             print(f"Ошибка при получении HTML: {e}")
@@ -68,59 +72,6 @@ def link_html_editors(code_area, text_area):
     # Инициализация
     code_to_html()
 
-
-def extract_html_from_qt_html(qt_html):
-    """
-    Извлекает чистый HTML из строки, возвращенной QTextEdit.toHtml()
-
-    Args:
-        qt_html: строка HTML с тегами Qt
-    Returns:
-        Чистый HTML без тегов Qt
-    """
-    import re
-
-    # Удаляем DOCTYPE и мета-теги Qt
-    lines = qt_html.split('\n')
-    clean_lines = []
-
-    in_body = False
-    for line in lines:
-        # Пропускаем заголовок и стили
-        if line.strip().startswith('<!DOCTYPE'):
-            continue
-        if '<head>' in line or '</head>' in line:
-            continue
-        if '<meta' in line and 'content="text/html;' in line:
-            continue
-
-        # Начинаем с body
-        if '<body' in line:
-            in_body = True
-            # Извлекаем содержимое body
-            match = re.search(r'<body[^>]*>(.*)</body>', line, re.DOTALL)
-            if match:
-                clean_lines.append(match.group(1))
-            continue
-
-        if '</body>' in line:
-            in_body = False
-            continue
-
-        if in_body:
-            clean_lines.append(line)
-
-    clean_html = '\n'.join(clean_lines)
-
-    # Убираем пустые параграфы, добавленные Qt
-    clean_html = clean_html.replace(
-        '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"></p>',
-        '')
-    clean_html = clean_html.replace(
-        '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>',
-        '')
-
-    return clean_html.strip()
 
 
 def set_observalbe_text(code_area, text_area):
@@ -157,11 +108,11 @@ def add_new_tab(filepath):
     text_area.setPlaceholderText("Введите текст здесь...")
     text_area.setHtml(html)
     #text_area.setAcceptRichText(True)
-    text_area.setPlainText(text_area.toPlainText())
+    #text_area.setPlainText(text_area.toPlainText())
 
     # print(text_area.toHtml())
     # print(code_area.toPlainText())
-    #link_html_editors(code_area, text_area)
+    link_html_editors(code_area, text_area)
     # set_observalbe_text(code_area, text_area)
     # left_layout.addWidget(QLabel("Код:"))
     left_layout.addWidget(code_area)
@@ -210,10 +161,10 @@ def add_new_tab(filepath):
     main_layout.addWidget(right_widget, 1)  # коэффициент растяжения 1
 
     # Добавляем новую вкладку
-    tab_index = form.tabWidget.addTab(new_widget, os.path.basename(filepath))
+    tab_index = tabWidgetHtml.addTab(new_widget, os.path.basename(filepath))
 
     # Переключаемся на новую вкладку
-    form.tabWidget.setCurrentIndex(tab_index)
+    tabWidgetHtml.setCurrentIndex(tab_index)
 
     action_text = window.findChild(QAction, "action_text")
     action_html = window.findChild(QAction, "action_HTML")
@@ -226,12 +177,6 @@ def add_new_tab(filepath):
     new_widget.datetime_edit = datetime_edit
     new_widget.header_edit = header_edit
     new_widget.public_btn = public_btn
-
-
-def remove_tab(index):
-    """Удаляет вкладку по индексу"""
-    if form.tabWidget.count() > 1:  # Оставляем хотя бы одну вкладку
-        form.tabWidget.removeTab(index)
 
 
 def time_limiter(num):
@@ -248,6 +193,35 @@ def time_limiter(num):
 def hide_show_widget(widget, is_shown):
     widget.setHidden(not is_shown)
 
+def open_html_gen():
+
+    return
+def open_dialog_wp_login():
+    def on_login():
+        print("Login button clicked")
+        print("asdasd")
+        site = "https://pavelyolvevwpsite.wordpress.com"
+        #site = dialog.le_url.text()
+        login = dialog.le_login.text()
+        #mccn7y4rcfhssgcx
+        password = dialog.le_password.text()
+
+        res = login_wp(site, login, password)
+        print(res)
+        return
+
+    dialog = uic.loadUi("dialog_wp_login.ui")
+    dialog.btn_login_wp.clicked.connect(on_login)
+    if hasattr(dialog, 'btn_cancel'):
+        dialog.btn_cancel.clicked.connect(dialog.reject)
+
+        # Теперь запускаем диалог
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        print("Dialog accepted")
+    else:
+        print("Dialog rejected")
+
+    return
 
 def test():
     # time_limiter(1439)
@@ -261,10 +235,24 @@ window, form = Window(), Form()
 form.setupUi(window)
 window.show()
 
+
+form.tab_html_gen.setLayout(QVBoxLayout())  # Создаем и устанавливаем layout
+tabWidgetHtml = QTabWidget()
+form.tab_html_gen.layout().addWidget(tabWidgetHtml)
+#tabWidgetHtml.setTabShape("QTabWidget::Triangular")
+tabWidgetHtml.setTabsClosable(True)
+tabWidgetHtml.setMovable(True)
+
 action_new_tab = window.findChild(QAction, "actionnewTab")
 action_open = window.findChild(QAction, "action_open")
+action_gen_html = window.findChild(QMenu, "menu_HTML")
+action_wp_dialog = window.findChild(QAction, "action_open_wp_dialog")
 
+
+action_wp_dialog.triggered.connect(open_dialog_wp_login)
 action_open.triggered.connect(lambda: open_file(window))
+action_gen_html.triggered.connect(lambda: hide_show_widget(tabWidgetHtml, action_gen_html.isChecked()))
+
 if action_new_tab:
     action_new_tab.triggered.connect(test)
 else:
@@ -276,17 +264,17 @@ def close_tab_handler(index):
     print(f"Закрытие вкладки с индексом: {index}")
 
     # Проверяем, можно ли закрыть вкладку
-    if form.tabWidget.count() > 1:  # Оставляем хотя бы одну вкладку
+    if tabWidgetHtml.count() > 1:  # Оставляем хотя бы одну вкладку
         # Можно добавить проверку на несохраненные изменения
-        widget = form.tabWidget.widget(index)
-        tab_name = form.tabWidget.tabText(index)
+        widget = tabWidgetHtml.widget(index)
+        tab_name = tabWidgetHtml.tabText(index)
         print(f"Закрываю вкладку: '{tab_name}'")
-        form.tabWidget.removeTab(index)
+        tabWidgetHtml.removeTab(index)
     else:
         print("Нельзя закрыть последнюю вкладку")
 
 
-form.tabWidget.tabCloseRequested.connect(close_tab_handler)
+tabWidgetHtml.tabCloseRequested.connect(close_tab_handler)
 
 # запускаем окно программы
 app.exec()
