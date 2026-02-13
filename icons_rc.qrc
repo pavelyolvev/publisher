@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/text-align-center.svg</file>
+    <file>icons/text-align-justify.svg</file>
+    <file>icons/text-align-left.svg</file>
+    <file>icons/text-align-right.svg</file>
+  </qresource>
+</RCC>
