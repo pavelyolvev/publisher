@@ -35,6 +35,29 @@ def parse_document(filepath):
         document = Document(f)
         all_tables = document.tables
         all_paragraphs = document.paragraphs
+        for i, block in enumerate(document.element.body):
+            # Получаем локальное имя тега (без пространства имён)
+            tag = block.tag.split('}')[-1]  # отрезаем {namespace}
+
+            if tag == 'tbl':
+                print(f"\n[{i}] 🔲 НАЧАЛО ТАБЛИЦЫ")
+
+                # Получаем объект таблицы
+                table = document.tables[len([b for b in document.element.body[:i] if b.tag.endswith('tbl')])]
+                print(f"    Размер: {len(table.rows)}x{len(table.columns)}")
+
+                # Выводим первую строку для примера
+                if table.rows:
+                    first_row = [cell.text for cell in table.rows[0].cells]
+                    print(f"    Первая строка: {first_row}")
+
+            elif tag == 'p':
+                paragraph = document.paragraphs[len([b for b in document.element.body[:i] if b.tag.endswith('p')])]
+                if paragraph.text.strip():
+                    print(f"\n[{i}] 📝 Параграф: {paragraph.text[:50]}...")
+
+            elif tag == 'sectPr':
+                print(f"\n[{i}] 📄 Секция (конец документа/раздела)")
         print('Всего таблиц в документе:', len(all_tables))
         data_tables = {i: None for i in range(len(all_tables))}
         # проходимся по таблицам
@@ -145,10 +168,10 @@ def parse_document(filepath):
         return ' '.join(content), doc_date, doc_num
 
 
-"""
+
 if len(sys.argv) != 2:
     print("Использование: python script.py <input_file> <output_file>")
     sys.exit(1)
 else:
     input_file = sys.argv[1]
-    parse_document(input_file)"""
+    parse_document(input_file)

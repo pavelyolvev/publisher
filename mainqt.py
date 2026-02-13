@@ -7,8 +7,8 @@ from PyQt6 import uic, QtCore
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QAction
 from html_text_gen import parse_document
-from wordpress_module import *
 from html_converter import convert
+from text_edit_tool_bar import add_tool_bar
 from docx_tab_widget import DocxTabWidget
 from PyQt5.QtCore import QDateTime, Qt, QTime
 
@@ -73,17 +73,6 @@ def link_html_editors(code_area, text_area):
     code_to_html()
 
 
-
-def set_observalbe_text(code_area, text_area):
-    def update_text(new_text):
-        buffer_text = new_text
-        code_area.setPlainText(buffer_text)
-        text_area.setText(buffer_text)
-
-    code_area.textChanged().connect(lambda: update_text(code_area.toPlainText()))
-    text_area.textChanged().connect(lambda: update_text(text_area.toPlainText()))
-
-
 def add_new_tab(filepath):
     html, doc_date, doc_num = parse_document(filepath)
     document_date = re.findall(r'\d{2}\.\d{2}\.\d{4}', doc_date)[0]
@@ -92,9 +81,11 @@ def add_new_tab(filepath):
     """Добавляет новую вкладку в tabWidget"""
     # Создаем содержимое для новой вкладки
     new_widget = QWidget()
+    mainest_layout = QVBoxLayout(new_widget)
 
+    main_widget = QWidget()
     # Создаем основной layout (например, QHBoxLayout для разделения на две части)
-    main_layout = QHBoxLayout(new_widget)
+    main_layout = QHBoxLayout(main_widget)
 
     # Левая часть: области для кода и текста
     left_widget = QWidget()
@@ -110,6 +101,9 @@ def add_new_tab(filepath):
     #text_area.setAcceptRichText(True)
     #text_area.setPlainText(text_area.toPlainText())
 
+    toolbar = add_tool_bar(text_area)
+    mainest_layout.addWidget(toolbar)
+    mainest_layout.addWidget(main_widget)
     # print(text_area.toHtml())
     # print(code_area.toPlainText())
     link_html_editors(code_area, text_area)
@@ -200,14 +194,14 @@ def open_dialog_wp_login():
     def on_login():
         print("Login button clicked")
         print("asdasd")
-        site = "https://pavelyolvevwpsite.wordpress.com"
+        site = "http://localhost/wordpress/"
         #site = dialog.le_url.text()
         login = dialog.le_login.text()
-        #mccn7y4rcfhssgcx
+        #OwryMS15nkOjVSVaLYR0nq4r
         password = dialog.le_password.text()
 
-        res = login_wp(site, login, password)
-        print(res)
+        #res = login_wp(site, login, password)
+        #print(res)
         return
 
     dialog = uic.loadUi("dialog_wp_login.ui")
@@ -276,5 +270,6 @@ def close_tab_handler(index):
 
 tabWidgetHtml.tabCloseRequested.connect(close_tab_handler)
 
+add_new_tab("C:/Users/brylo/OneDrive/Desktop/publisher/py/37.docx")
 # запускаем окно программы
 app.exec()

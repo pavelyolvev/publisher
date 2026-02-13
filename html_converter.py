@@ -2,7 +2,7 @@ import re
 
 
 def convert(html):
-    html = html.split('''</style></head><body style=" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;">''')[1]
+    html = html.split(re.search(r'<body\b[^>]*>', html).group(0))[1]
     html = html.split('</body></html>')[0]
     res_html = []
     html_array = html.split('\n')
@@ -51,5 +51,15 @@ li.checked::marker { content: "\2612"; }
 <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">4. Контроль за выполнением настоящего Постановления возложить на руководителя Комитета по управлению муниципальным имуществом Администрации муниципального района Похвистневский О.А. Денисову. </p>
 <p align="center" style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Глава района <span style=" font-weight:700;">А.В.Шахвалов</span></p>
 <p align="right" style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><a href="http://pohr.ru/wps/wp-content/uploads/2026/01/12.docx.docx"><span style=" font-weight:700; text-decoration: underline; color:#0000ff;">Приложение</span></a> </p></body></html>"""
+
+htmll2 = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" /><style type="text/css">
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: "\2610"; }
+li.checked::marker { content: "\2612"; }
+</style></head><body>
+<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><!--StartFragment--><span style=" font-weight:700;">О внесении изменений в муниципальную программу «Развитие муниципальной службы в Администрации муниципального района Похвистневский Самарской области» на 2024-2028 годы</span> <!--EndFragment--></p></body></html>
+"""
 #ht = convert(htmll)
 #print(ht)
