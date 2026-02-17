@@ -1,3 +1,5 @@
+import re
+
 from PyQt6 import uic, QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QToolButton, QGridLayout, QFrame, QTextEdit
@@ -9,7 +11,16 @@ def align_text(html, side):
     return
 
 
-def text_make_bold(html, is_bold):
+def text_make_bold(text_edit, is_bold):
+    full_text = convert(text_edit.toHtml())
+    sel_text = text_edit.textCursor().selectedText()
+
+    # Экранируем спецсимволы в выделенном тексте
+    escaped_sel_text = re.escape(sel_text)
+
+    # Ищем паттерн (re.DOTALL для учета переносов строк, re.UNICODE для юникода)
+    pattern = f"<strong>.*?{escaped_sel_text}.*?</strong>"
+    match = re.search(pattern, full_text, re.DOTALL | re.UNICODE)
 
     return
 

@@ -6,11 +6,9 @@ from datetime import datetime
 from PyQt6 import uic, QtCore
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QAction
-from html_text_gen import parse_document
+from html_text_table_gen import parse_document_text_table
 from html_converter import convert
 from text_edit_tool_bar import add_tool_bar
-from docx_tab_widget import DocxTabWidget
-from PyQt5.QtCore import QDateTime, Qt, QTime
 
 
 # эта функция срабатывает при нажатии кнопки
@@ -74,7 +72,7 @@ def link_html_editors(code_area, text_area):
 
 
 def add_new_tab(filepath):
-    html, doc_date, doc_num = parse_document(filepath)
+    html, doc_date, doc_num = parse_document_text_table(filepath)
     document_date = re.findall(r'\d{2}\.\d{2}\.\d{4}', doc_date)[0]
     print(document_date)
     # print(html)
