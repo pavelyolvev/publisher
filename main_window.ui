@@ -39,7 +39,7 @@
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -48,7 +48,7 @@
        <bool>true</bool>
       </property>
       <property name="tabsClosable">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="movable">
        <bool>true</bool>
@@ -60,7 +60,7 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Tab 2</string>
+        <string>Записи</string>
        </attribute>
       </widget>
      </widget>
@@ -107,7 +107,7 @@
      <property name="title">
       <string>WordPress</string>
      </property>
-     <addaction name="action_7"/>
+     <addaction name="action_status"/>
      <addaction name="separator"/>
      <addaction name="action_open_wp_dialog"/>
     </widget>
@@ -119,10 +119,16 @@
     </property>
     <addaction name="actionnewTab"/>
    </widget>
+   <widget class="QMenu" name="menuWordpress">
+    <property name="title">
+     <string>Wordpress:</string>
+    </property>
+   </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
    <addaction name="menuTest"/>
+   <addaction name="menuWordpress"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_open">
@@ -167,9 +173,9 @@
     <string>Отображать текст</string>
    </property>
   </action>
-  <action name="action_7">
+  <action name="action_status">
    <property name="text">
-    <string>Статус:</string>
+    <string>Проверить статус</string>
    </property>
   </action>
   <action name="action_open_wp_dialog">

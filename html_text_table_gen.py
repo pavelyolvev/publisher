@@ -4,16 +4,19 @@ import re
 from docx import Document
 from datetime import date
 
+import table_gen
 
 template_p1 = '<p style="text-align: center;"><strong>Постановление </strong></p>\n<p style="text-align: right;"><strong>{}</strong></p>\n<p style="text-align: center;"><strong>{}</strong></p>\n'
 template_p2 = '<p style="text-align: justify;">{}</p>\n'
 template_p3 = '<p style="text-align: center;"><strong>П О С Т А Н О В Л Я Е Т:</strong></p>\n'
 template_p3_short = '<p style="text-align: center;"><strong>П О С Т А Н О В Л Я Е Т: <a href="http://pohr.ru/wps/wp-content/uploads/{}/{}/{}">см. приложение</a></strong></p>\n'
 template_p4 = '<p style="text-align: justify;">{}</p>\n'
-template_p5 = '<p style="text-align: center;">{}   <strong>{}</strong></p>\n<p style="text-align: right;"><strong><a href="http://pohr.ru/wps/wp-content/uploads/{}/{}/{}">Приложение</a></strong></p>\n'
+template_p5 = '<p style="text-align: center;">{}   <strong>{}</strong></p>\n<p style="text-align: right;"><strong><a href="{}">Приложение</a></strong></p>\n'
+# для pohr ru должно быть http://pohr.ru/wps/wp-content/....
+text_limiter_number = 25000  # количество разрешенных символов после заголовка "постановление:".
 
-text_limiter_number = 2500  # количество разрешенных символов после заголовка "постановление:".
-                            # если больше - генерируется по template_p3_short
+
+# если больше - генерируется по template_p3_short
 def time_limiter(num):
     res_h = 0
     res_m = 0
@@ -47,26 +50,27 @@ def parse_document_text_table(filepath):
             tag = block.tag.split('}')[-1]  # отрезаем {namespace}
             to_append = ""
             if tag == 'tbl':
-                print(f"\n[{i}] 🔲 НАЧАЛО ТАБЛИЦЫ")
+                # print(f"\n[{i}] 🔲 НАЧАЛО ТАБЛИЦЫ")
 
                 # Получаем объект таблицы
                 table = document.tables[len([b for b in document.element.body[:i] if b.tag.endswith('tbl')])]
-                print(f"    Размер: {len(table.rows)}x{len(table.columns)}")
+                # print(f"    Размер: {len(table.rows)}x{len(table.columns)}")
                 docdate = is_table_name(table)
                 if docdate is not None:
                     doc_date = docdate
                     doc_num = int(doc_date.split('№')[1])
                 else:
-                    to_append = gen_html_table(table)
-                print(doc_date)
+                    #to_append = gen_html_table(table)
+                     to_append = table_gen.gen_html_table_simple(table)
+                # print(doc_date)
 
             elif tag == 'p':
                 paragraph = document.paragraphs[len([b for b in document.element.body[:i] if b.tag.endswith('p')])]
                 prev_paragraph = document.paragraphs[
                     len([b for b in document.element.body[:i] if b.tag.endswith('p')]) - 1]
                 # if paragraph.text.strip():
-                print(''.join(paragraph.text.split()) != "")
-                print(is_empty)
+                # print(''.join(paragraph.text.split()) != "")
+                # print(is_empty)
                 if ''.join(paragraph.text.split()) != "" and is_empty:
                     is_empty = False
                     text_before_postanovlenie.clear()
@@ -97,13 +101,12 @@ def parse_document_text_table(filepath):
                     if author_par:
                         today = date.today()
                         # author_html = f'<p style="text-align: center;">{author_par.replace(author, "")}   <strong>{author}</strong></p>'
-                        author_html = template_p5.format(author_par, author, today.strftime('%Y'), today.strftime('%m'),
-                                                         os.path.basename(filepath))
+                        author_html = template_p5.format(author_par, author, '{}')
                         break
                 except TypeError:
                     print("no author here")
 
-                print(f"\n[{i}] 📝 Параграф: {paragraph.text}")
+                # print(f"\n[{i}] 📝 Параграф: {paragraph.text}")
             elif tag == 'sectPr':
                 print(f"\n[{i}] 📄 Секция (конец документа/раздела)")
 
@@ -120,7 +123,8 @@ def parse_document_text_table(filepath):
         today = date.today()
         if len(''.join(text_after_postanovlenie)) > text_limiter_number:
             html.append(gen_name_before_html(doc_date, text_before_postanovlenie))
-            html.append(template_p3_short.format(today.strftime('%Y'), today.strftime('%m'), os.path.basename(filepath)))
+            html.append(
+                template_p3_short.format(today.strftime('%Y'), today.strftime('%m'), os.path.basename(filepath)))
             print(''.join(html))
         else:
             print(doc_date)
@@ -128,7 +132,7 @@ def parse_document_text_table(filepath):
             html.append(template_p3)
             html.append(gen_text_after_html(text_after_postanovlenie))
             html.append(author_html)
-        #print(''.join(html))
+        # print(''.join(html))
         return ''.join(html), doc_date, doc_num
 
 
@@ -144,18 +148,40 @@ def is_table_name(table):
 
 
 def gen_html_table(table):
-    cell_template = "<td>{}</td>"
+    cell_template = "<td style='border-width:1px; border-style:solid;'>{}</td>"
     row_template = "<tr>\n{}\n</tr>"
 
     cells = []
     rows = []
+
     for i, row in enumerate(table.rows):
         for cell in table.rows[i].cells:
             cells.append(cell_template.format(' '.join(cell.text.split())))
         rows.append(row_template.format('\n'.join(cells)))
-    table_html = f"<table style='border-width:1px; border-style:solid;'>\n{''.join(rows)}\n</table>"
+    table_html = f"<table style='border-collapse: collapse'>\n{''.join(rows)}\n</table>"
     return table_html
 
+
+
+
+
+
+
+def colspan_for_cell(c, cur_row, table): # c - индекс ячейки в строке
+                                         # cur_row - индекс текущей строки
+    colspan = 1
+    print("    vert:")
+    cells = table.rows[c].cells
+    print(cells[cur_row])
+    for j in range(cur_row, len(cells)):
+        if j + 1 in range(0, len(cells)) and cells[j + 1] == cells[j]:
+            for i in range(j, len(cells)):
+                print(cells[i])
+                print('    end vert')
+                if i + 1 in range(0, len(cells)) and cells[i + 1] == cells[i]:
+                    colspan += 1
+    print(f"   colspan: {colspan}")
+    return colspan
 
 def gen_name_before_html(doc_date, text_before):
     html = []
@@ -171,8 +197,6 @@ def gen_name_before_html(doc_date, text_before):
         if line != "":
             html.append(template_p2.format(line))
     return ''.join(html)
-
-
 
 
 def gen_text_after_html(text_after):
@@ -212,11 +236,10 @@ def is_author(prev_paragraph, paragraph):
         return ' '.join(author[0].split()), author[1]
 
 
-"""if len(sys.argv) != 2:
+if len(sys.argv) != 2:
     print("Использование: python script.py <input_file> <output_file>")
-    sys.exit(1)
+    # sys.exit(1)
 else:
     input_file = sys.argv[1]
     html, datet, num = parse_document_text_table(input_file)
-    print(html)"""
-
+    print(html)

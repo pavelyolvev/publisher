@@ -1,3 +1,5 @@
+import mimetypes
+import os
 from datetime import datetime
 
 import requests
@@ -110,7 +112,7 @@ class WordPressAPI:
                      title,
                      content,
                      categories=None,
-                     default_category="Без рубрики",
+                     default_category="Постановления",
                      status="publish",
                      publish_date=None,  # Если None - публикуется сразу
                      excerpt="",
@@ -174,13 +176,221 @@ class WordPressAPI:
             print(f"   ID: {result.get('id')}")
             print(f"   Статус: {result.get('status')}")
             print(f"   Ссылка: {result.get('link')}")
+            import webbrowser
+            webbrowser.open(result.get('link'), new=0, autoraise=True)
             return result
         else:
             print("❌ Ошибка публикации записи")
             return None
 
-# ============== ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ ==============
+    # ============== РАБОТА С МЕДИАФАЙЛАМИ ==============
 
+    def upload_media(self, file_path, title=None, alt_text=None, caption=None, description=None, post_id=None):
+        """
+        Загрузить файл в медиабиблиотеку WordPress
+
+        Args:
+            file_path (str): Путь к файлу на локальном компьютере
+            title (str, optional): Заголовок медиафайла
+            alt_text (str, optional): Альтернативный текст
+            caption (str, optional): Подпись к изображению
+            description (str, optional): Описание
+            post_id (int, optional): ID записи, к которой прикрепить медиафайл
+
+        Returns:
+            dict: Данные загруженного медиафайла или None при ошибке
+        """
+        # Проверяем существование файла
+        if not os.path.exists(file_path):
+            print(f"❌ Файл не найден: {file_path}")
+            return None
+
+        # Определяем MIME-тип файла
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if not mime_type:
+            # По умолчанию для неизвестных типов
+            mime_type = 'application/octet-stream' #application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+        # Получаем имя файла
+        filename = os.path.basename(file_path)
+
+        # Открываем файл для чтения в бинарном режиме
+        with open(file_path, 'rb') as file:
+            files = {
+                'file': (filename, file, mime_type)
+            }
+
+            # Формируем URL для загрузки
+            url = self._rest_url("wp/v2/media")
+
+            # Добавляем параметры в query string, если нужно прикрепить к записи
+            params = {}
+            if post_id:
+                params['post'] = post_id
+
+            # Заголовки для multipart/form-data
+            headers = {
+                'Accept': 'application/json',
+                # Не указываем Content-Type, requests установит его автоматически с границей
+            }
+
+            try:
+                response = requests.post(
+                    url,
+                    auth=self.auth,
+                    headers=headers,
+                    params=params,
+                    files=files
+                )
+
+                if response.status_code in [200, 201]:
+                    media_data = response.json()
+
+                    # Если нужно обновить метаданные (заголовок, подпись и т.д.)
+                    if title or alt_text or caption or description:
+                        media_id = media_data.get('id')
+                        if media_id:
+                            self.update_media_metadata(
+                                media_id,
+                                title=title,
+                                alt_text=alt_text,
+                                caption=caption,
+                                description=description
+                            )
+
+                    print(f"✅ Медиафайл загружен: {filename}")
+                    print(f"   ID: {media_data.get('id')}")
+                    print(f"   URL: {media_data.get('source_url')}")
+
+                    return media_data
+                else:
+                    print(f"❌ Ошибка загрузки файла: {response.status_code}")
+                    print(response.text)
+                    return None
+
+            except Exception as e:
+                print(f"❌ Исключение при загрузке файла: {e}")
+                return None
+
+    def update_media_metadata(self, media_id, title=None, alt_text=None, caption=None, description=None):
+        """
+        Обновить метаданные медиафайла
+
+        Args:
+            media_id (int): ID медиафайла
+            title (str, optional): Заголовок
+            alt_text (str, optional): Альтернативный текст
+            caption (str, optional): Подпись
+            description (str, optional): Описание
+
+        Returns:
+            dict: Обновленные данные медиафайла или None при ошибке
+        """
+        data = {}
+
+        if title:
+            data['title'] = title
+
+        if alt_text:
+            data['alt_text'] = alt_text
+
+        if caption:
+            data['caption'] = caption
+
+        if description:
+            data['description'] = description
+
+        if not data:
+            print("⚠️ Нет данных для обновления")
+            return None
+
+        return self._request('POST', f'wp/v2/media/{media_id}', json=data)
+
+    def get_media(self, media_id=None, per_page=10, page=1):
+        """
+        Получить информацию о медиафайлах
+
+        Args:
+            media_id (int, optional): ID конкретного медиафайла
+            per_page (int): Количество элементов на странице
+            page (int): Номер страницы
+
+        Returns:
+            list/dict: Список медиафайлов или данные конкретного файла
+        """
+        if media_id:
+            return self._request('GET', f'wp/v2/media/{media_id}')
+        else:
+            params = {
+                'per_page': per_page,
+                'page': page
+            }
+            url = f"wp/v2/media?per_page={per_page}&page={page}"
+            return self._request('GET', url, params=params)
+
+    def delete_media(self, media_id, force=True):
+        """
+        Удалить медиафайл
+
+        Args:
+            media_id (int): ID медиафайла
+            force (bool): Принудительное удаление (без корзины)
+
+        Returns:
+            bool: True если успешно, False при ошибке
+        """
+        params = {'force': force}
+        result = self._request('DELETE', f'wp/v2/media/{media_id}', params=params)
+
+        if result:
+            print(f"✅ Медиафайл {media_id} удален")
+            return True
+
+        print(f"❌ Ошибка удаления медиафайла {media_id}")
+        return False
+
+    def get_media_by_post(self, post_id):
+        """
+        Получить медиафайлы, прикрепленные к конкретной записи
+
+        Args:
+            post_id (int): ID записи
+
+        Returns:
+            list: Список медиафайлов
+        """
+        return self._request('GET', f'wp/v2/media?parent={post_id}')
+
+    def upload_multiple_media(self, file_paths, **kwargs):
+        """
+        Загрузить несколько файлов в медиабиблиотеку
+
+        Args:
+            file_paths (list): Список путей к файлам
+            **kwargs: Дополнительные параметры для upload_media
+
+        Returns:
+            list: Список результатов загрузки
+        """
+        results = []
+        for file_path in file_paths:
+            print(f"\n📤 Загрузка: {file_path}")
+            result = self.upload_media(file_path, **kwargs)
+            results.append({
+                'file': file_path,
+                'result': result,
+                'success': result is not None
+            })
+
+        # Статистика
+        successful = sum(1 for r in results if r['success'])
+        print(f"\n📊 Итоги загрузки: {successful}/{len(file_paths)} файлов загружено")
+
+        return results
+
+
+# ============== ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ ==============
+"""
 # Подключение к сайту
 wp = WordPressAPI(
     site_url="http://localhost/wordpress",
@@ -230,4 +440,4 @@ post4 = wp.publish_post(
 print("\n📂 Все рубрики на сайте:")
 categories = wp.get_categories()
 for cat in categories:
-    print(f"  - {cat['name']} (ID: {cat['id']}, записей: {cat['count']})")
+    print(f"  - {cat['name']} (ID: {cat['id']}, записей: {cat['count']})")"""

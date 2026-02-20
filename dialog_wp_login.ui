@@ -53,6 +53,9 @@
     </property>
     <item row="2" column="1">
      <widget class="QLineEdit" name="le_password">
+      <property name="text">
+       <string>sP1o sA5h UlIo BUhO r3KJ UtXu</string>
+      </property>
       <property name="echoMode">
        <enum>QLineEdit::Password</enum>
       </property>
@@ -105,10 +108,18 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QLineEdit" name="le_login"/>
+     <widget class="QLineEdit" name="le_login">
+      <property name="text">
+       <string>pavelyolvev</string>
+      </property>
+     </widget>
     </item>
     <item row="0" column="1">
-     <widget class="QLineEdit" name="le_url"/>
+     <widget class="QLineEdit" name="le_url">
+      <property name="text">
+       <string>http://localhost/wordpress/</string>
+      </property>
+     </widget>
     </item>
     <item row="0" column="0">
      <widget class="QLabel" name="label_3">
