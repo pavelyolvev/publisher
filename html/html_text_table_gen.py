@@ -1,19 +1,23 @@
 import os
 import sys
 import re
+
+import doc2docx
 from docx import Document
 from datetime import date
 
-import table_gen
+from html import table_gen
 
 template_p1 = '<p style="text-align: center;"><strong>Постановление </strong></p>\n<p style="text-align: right;"><strong>{}</strong></p>\n<p style="text-align: center;"><strong>{}</strong></p>\n'
 template_p2 = '<p style="text-align: justify;">{}</p>\n'
 template_p3 = '<p style="text-align: center;"><strong>П О С Т А Н О В Л Я Е Т:</strong></p>\n'
-template_p3_short = '<p style="text-align: center;"><strong>П О С Т А Н О В Л Я Е Т: <a href="http://pohr.ru/wps/wp-content/uploads/{}/{}/{}">см. приложение</a></strong></p>\n'
+template_p3_short_offline = '<p style="text-align: center;"><strong>П О С Т А Н О В Л Я Е Т: <a href="http://pohr.ru/wps/wp-content/uploads/{}/{}/{}">см. приложение</a></strong></p>\n'
+template_p3_short = '<p style="text-align: center;"><strong>П О С Т А Н О В Л Я Е Т: <a href="{}">см. приложение</a></strong></p>\n'
 template_p4 = '<p style="text-align: justify;">{}</p>\n'
+template_p5_offline = '<p style="text-align: center;">{}   <strong>{}</strong></p>\n<p style="text-align: right;"><strong><a href="http://pohr.ru/wps/wp-content/uploads/{}/{}/{}">Приложение</a></strong></p>\n'
 template_p5 = '<p style="text-align: center;">{}   <strong>{}</strong></p>\n<p style="text-align: right;"><strong><a href="{}">Приложение</a></strong></p>\n'
 # для pohr ru должно быть http://pohr.ru/wps/wp-content/....
-text_limiter_number = 25000  # количество разрешенных символов после заголовка "постановление:".
+text_limiter_number = 2750  # количество разрешенных символов после заголовка "постановление:".
 
 
 # если больше - генерируется по template_p3_short
@@ -28,9 +32,33 @@ def time_limiter(num):
     return res_h, res_m
 
 
-def parse_document_text_table(filepath):
+def parse_document_text_table(filepath, is_online):
+    extension = os.path.splitext(filepath)[1].lstrip(".")
+
+    if extension == "doc":
+        # Создаем имя для конвертированного файла
+        base_name = os.path.basename(filepath)
+        docx_name = base_name + "x"  # добавляем 'x' к имени файла
+
+        # Создаем директорию для конвертированных файлов, если её нет
+        converted_dir = os.path.join(os.path.dirname(filepath), "convertedDoc")
+        os.makedirs(converted_dir, exist_ok=True)
+
+        # Полный путь для сохранения
+        output_path = os.path.join(converted_dir, docx_name)
+
+        # Конвертируем
+        try:
+            doc2docx.convert(filepath, output_path)
+            path = output_path  # Используем конвертированный файл
+        except Exception as e:
+            print(f"Ошибка конвертации: {e}")
+            return None, None, None
+    else:
+        path = filepath  # Используем исходный файл
+    print(is_online)
     num_lvl_counter = [0] * 9
-    global doc_date
+    global doc_date, header
     doc_num = 0
     html = []
     is_before = True
@@ -41,8 +69,8 @@ def parse_document_text_table(filepath):
     tables = []
     table_html = ""
     author_html = ""
-    if filepath != "":
-        f = open(f'{filepath}', 'rb')
+    if path != "":
+        f = open(f'{path}', 'rb')
         document = Document(f)
         lowest_num_lvl = 0
         for i, block in enumerate(document.element.body):
@@ -55,7 +83,7 @@ def parse_document_text_table(filepath):
                 # Получаем объект таблицы
                 table = document.tables[len([b for b in document.element.body[:i] if b.tag.endswith('tbl')])]
                 # print(f"    Размер: {len(table.rows)}x{len(table.columns)}")
-                docdate = is_table_name(table)
+                docdate, header = is_table_name(table)
                 if docdate is not None:
                     doc_date = docdate
                     doc_num = int(doc_date.split('№')[1])
@@ -101,7 +129,9 @@ def parse_document_text_table(filepath):
                     if author_par:
                         today = date.today()
                         # author_html = f'<p style="text-align: center;">{author_par.replace(author, "")}   <strong>{author}</strong></p>'
-                        author_html = template_p5.format(author_par, author, '{}')
+                        if is_online:
+                            author_html = template_p5.format(author_par, author, '{}')
+                        else: author_html = template_p5_offline.format(author_par, author, today.strftime('%Y'), today.strftime('%m'), os.path.basename(filepath))
                         break
                 except TypeError:
                     print("no author here")
@@ -121,14 +151,14 @@ def parse_document_text_table(filepath):
         print(text_before_postanovlenie)
         print(text_after_postanovlenie)
         today = date.today()
+        html.append(gen_name_before_html(doc_date, text_before_postanovlenie, header))
         if len(''.join(text_after_postanovlenie)) > text_limiter_number:
-            html.append(gen_name_before_html(doc_date, text_before_postanovlenie))
-            html.append(
-                template_p3_short.format(today.strftime('%Y'), today.strftime('%m'), os.path.basename(filepath)))
+            if is_online:
+                html.append(template_p3_short.format("{}"))
+            else: html.append(template_p3_short_offline.format(today.strftime('%Y'), today.strftime('%m'), os.path.basename(filepath)))
             print(''.join(html))
         else:
             print(doc_date)
-            html.append(gen_name_before_html(doc_date, text_before_postanovlenie))
             html.append(template_p3)
             html.append(gen_text_after_html(text_after_postanovlenie))
             html.append(author_html)
@@ -137,14 +167,19 @@ def parse_document_text_table(filepath):
 
 
 def is_table_name(table):
+    matched = None # номер
+    non_default_matched = None # если не None - заголовок
     if table.rows:
         for i, t_row in enumerate(table.rows):
-            for cell in table.rows[i].cells:
+            for j, cell in enumerate(table.rows[i].cells):
+                print(f"строка {i}, ячейка {j}: {cell.text}")
                 match = re.match(r'\s*администрация.*постановление.*(\d{2}\.\d{2}\.\d{4}\s*№\s*\d+)',
                                  ' '.join(cell.text.lower().split()))
                 if match:
-                    return match.group(1)
-    return
+                    matched = match.group(1)
+                elif matched is not None:
+                    non_default_matched = cell.text
+    return matched, non_default_matched
 
 
 def gen_html_table(table):
@@ -160,11 +195,6 @@ def gen_html_table(table):
         rows.append(row_template.format('\n'.join(cells)))
     table_html = f"<table style='border-collapse: collapse'>\n{''.join(rows)}\n</table>"
     return table_html
-
-
-
-
-
 
 
 def colspan_for_cell(c, cur_row, table): # c - индекс ячейки в строке
@@ -183,16 +213,22 @@ def colspan_for_cell(c, cur_row, table): # c - индекс ячейки в ст
     print(f"   colspan: {colspan}")
     return colspan
 
-def gen_name_before_html(doc_date, text_before):
+
+def gen_name_before_html(doc_date_, text_before, header_):
     html = []
-    name_arr = ""
-    for i, line in enumerate(text_before):
-        if line == "":
-            name_arr = text_before[0:i:1]
-            print(text_before[0:i])
-            del text_before[0:i]
-            break
-    html.append(template_p1.format(doc_date, ' '.join(name_arr)))
+    name = ""
+    if header_ is None:
+        name_arr = []
+        for i, line in enumerate(text_before):
+            if line == "":
+                name_arr = text_before[0:i:1]
+                print(text_before[0:i])
+                del text_before[0:i]
+                break
+        name = ' '.join(name_arr)
+    else: name = header_
+    html.append(template_p1.format(doc_date_, name))
+
     for line in text_before:
         if line != "":
             html.append(template_p2.format(line))

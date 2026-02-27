@@ -1,6 +1,10 @@
 import re
 
 
+def check_for_empty_tags(html):
+    pattern = r"\s*<strong>\s*</strong>\s*"
+    return re.sub(pattern, '', html)
+
 def convert(html):
     html = html.split(re.search(r'<body\b[^>]*>', html).group(0))[1]
     html = html.split('</body></html>')[0]

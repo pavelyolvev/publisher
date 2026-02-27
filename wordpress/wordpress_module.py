@@ -47,6 +47,41 @@ class WordPressAPI:
         )
         return response.json()
 
+    def get_posts_on_page(self, page, per_page=10):
+        """
+        Получить записи с конкретной страницы
+
+        Args:
+            page (int): Номер страницы (начиная с 1)
+            per_page (int): Количество записей на странице (по умолчанию 10)
+
+        Returns:
+            tuple: (total_pages, list_of_posts)
+        """
+        params = {
+            'page': page,
+            'per_page': per_page
+        }
+
+        response = requests.get(
+            self._rest_url("wp/v2/posts"),
+            auth=self.auth,
+            headers=self.headers,
+            params=params
+        )
+
+        print(f"Статус ответа: {response.status_code}")
+
+        if response.status_code == 200:
+            # Получаем общее количество страниц из заголовков
+            total_pages = int(response.headers.get('X-WP-TotalPages', 1))
+            posts = response.json()
+            return (total_pages, posts)
+        else:
+            print(f"Ошибка получения записей: {response.status_code}")
+            print(response.text)
+            return (0, [])
+
     def get_post(self, post_id):
         """Получить конкретную запись по ID"""
         response = requests.get(
@@ -84,6 +119,16 @@ class WordPressAPI:
                 if cat['name'].lower() == category_name.lower():
                     return cat['id']
         return None
+    def get_category_names_with_id(self):
+        """Найти ID рубрики по названию"""
+        categories = self.get_categories()
+        names_ids = []
+        for cat in categories:
+            # Проверяем, что cat - это словарь
+            if isinstance(cat, dict) and 'name' in cat:
+                names_ids.append((cat["id"], cat["name"]))
+
+        return names_ids
 
     def create_category(self, category_name, parent_id=0):
         """Создать новую рубрику"""

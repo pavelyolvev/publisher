@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Publisher</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../icons/publish.svg</normaloff>../icons/publish.svg</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -39,7 +43,7 @@
        <enum>QTabWidget::Triangular</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -58,7 +62,7 @@
         <string>Генератор HTML</string>
        </attribute>
       </widget>
-      <widget class="QWidget" name="tab_2">
+      <widget class="QWidget" name="tab_posts">
        <attribute name="title">
         <string>Записи</string>
        </attribute>
@@ -80,8 +84,16 @@
     <property name="title">
      <string>Файл</string>
     </property>
+    <widget class="QMenu" name="menu_last_sessions">
+     <property name="title">
+      <string>Последние сессии</string>
+     </property>
+     <addaction name="action"/>
+    </widget>
     <addaction name="action_open"/>
     <addaction name="action_save"/>
+    <addaction name="action_save_session"/>
+    <addaction name="menu_last_sessions"/>
     <addaction name="separator"/>
     <addaction name="action_close_tabs"/>
     <addaction name="action_exit"/>
@@ -104,22 +116,31 @@
      <string>Настройки</string>
     </property>
     <widget class="QMenu" name="menuWordPress">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>WordPress</string>
      </property>
-     <addaction name="action_status"/>
+     <addaction name="action_reconnect"/>
      <addaction name="separator"/>
      <addaction name="action_open_wp_dialog"/>
     </widget>
     <addaction name="menuWordPress"/>
    </widget>
    <widget class="QMenu" name="menuTest">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>Test</string>
     </property>
     <addaction name="actionnewTab"/>
    </widget>
    <widget class="QMenu" name="menuWordpress">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>Wordpress:</string>
     </property>
@@ -137,6 +158,9 @@
    </property>
   </action>
   <action name="action_save">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Сохранить</string>
    </property>
@@ -173,9 +197,9 @@
     <string>Отображать текст</string>
    </property>
   </action>
-  <action name="action_status">
+  <action name="action_reconnect">
    <property name="text">
-    <string>Проверить статус</string>
+    <string>Переподключиться</string>
    </property>
   </action>
   <action name="action_open_wp_dialog">
@@ -184,8 +208,14 @@
    </property>
   </action>
   <action name="actionnewTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>newTab</string>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
    </property>
   </action>
   <action name="action_HTML_2">
@@ -208,6 +238,16 @@
    </property>
    <property name="text">
     <string>Отображать текст</string>
+   </property>
+  </action>
+  <action name="action_save_session">
+   <property name="text">
+    <string>Сохранить сессию</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>Выберите сессию из списка:</string>
    </property>
   </action>
  </widget>
