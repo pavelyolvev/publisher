@@ -3,7 +3,6 @@ import os
 import re
 from datetime import datetime
 
-import doc2docx
 from PyQt6 import uic, QtCore
 from PyQt6.QtCore import Qt, QThread
 from PyQt6.QtWidgets import *
@@ -129,7 +128,12 @@ def add_new_tab(filepath):
     global is_online
 
     html, doc_date, doc_num = parse_document_text_table(filepath, is_online)
-    document_date = re.findall(r'\d{2}\.\d{2}\.\d{4}', doc_date)[0]
+    if doc_date is not None:
+        document_date = re.findall(r'\d{2}\.\d{2}\.\d{4}', doc_date)[0]
+    else:
+        doc_date = ""
+        document_date = "00.00.0000"
+        QMessageBox().critical(None, "Ошибка!", f"Не удалось определить дату и номер постановления. Номер постановления указан по названию файла. Файл {os.path.basename(filepath)}")
 
     new_widget = QWidget()
     mainest_layout = QVBoxLayout(new_widget)
@@ -172,7 +176,10 @@ def add_new_tab(filepath):
     header_edit = QLineEdit()
     header_edit.setPlaceholderText("Введите заголовок...")
     date_num = doc_date.split(' ', 1)
-    header_edit.setText(f"{date_num[0]} Постановление {date_num[1]}")
+    if doc_date != "":
+        header_edit.setText(f"{date_num[0]} Постановление {date_num[1]}")
+    else:
+        header_edit.setText(f"ВставьтеДату Постановление № {os.path.splitext(os.path.basename(filepath))[0]}")
 
     # Создаем дерево категорий
     categories_lbl = QLabel("Рубрики:")

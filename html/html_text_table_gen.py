@@ -58,7 +58,7 @@ def parse_document_text_table(filepath, is_online):
         path = filepath  # Используем исходный файл
     print(is_online)
     num_lvl_counter = [0] * 9
-    global doc_date, header
+    global header, docdate
     doc_num = 0
     html = []
     is_before = True
@@ -85,12 +85,10 @@ def parse_document_text_table(filepath, is_online):
                 # print(f"    Размер: {len(table.rows)}x{len(table.columns)}")
                 docdate, header = is_table_name(table)
                 if docdate is not None:
-                    doc_date = docdate
-                    doc_num = int(doc_date.split('№')[1])
+                    doc_num = int(docdate.split('№')[1])
                 else:
                     #to_append = gen_html_table(table)
                      to_append = table_gen.gen_html_table_simple(table)
-                # print(doc_date)
 
             elif tag == 'p':
                 paragraph = document.paragraphs[len([b for b in document.element.body[:i] if b.tag.endswith('p')])]
@@ -151,19 +149,18 @@ def parse_document_text_table(filepath, is_online):
         print(text_before_postanovlenie)
         print(text_after_postanovlenie)
         today = date.today()
-        html.append(gen_name_before_html(doc_date, text_before_postanovlenie, header))
+        html.append(gen_name_before_html(docdate, text_before_postanovlenie, filepath, header))
         if len(''.join(text_after_postanovlenie)) > text_limiter_number:
             if is_online:
                 html.append(template_p3_short.format("{}"))
             else: html.append(template_p3_short_offline.format(today.strftime('%Y'), today.strftime('%m'), os.path.basename(filepath)))
             print(''.join(html))
         else:
-            print(doc_date)
             html.append(template_p3)
             html.append(gen_text_after_html(text_after_postanovlenie))
             html.append(author_html)
         # print(''.join(html))
-        return ''.join(html), doc_date, doc_num
+        return ''.join(html), docdate, doc_num
 
 
 def is_table_name(table):
@@ -214,7 +211,7 @@ def colspan_for_cell(c, cur_row, table): # c - индекс ячейки в ст
     return colspan
 
 
-def gen_name_before_html(doc_date_, text_before, header_):
+def gen_name_before_html(doc_date_, text_before, filepath, header_):
     html = []
     name = ""
     if header_ is None:
@@ -227,6 +224,8 @@ def gen_name_before_html(doc_date_, text_before, header_):
                 break
         name = ' '.join(name_arr)
     else: name = header_
+    if doc_date_ is None:
+        doc_date_ = f"ВставьтеДату № {os.path.splitext(os.path.basename(filepath))[0]}"
     html.append(template_p1.format(doc_date_, name))
 
     for line in text_before:
